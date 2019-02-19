@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::path::PathBuf;
 use std::fs::File;
 use std::io::{self, BufReader};
 use std::io::prelude::*;
@@ -35,7 +36,11 @@ fn get_mime_type(mime_paths: &[&Path], extension: &str) -> Result<String, io::Er
 }
 
 fn main() {
-    let mime_paths: [&Path; 3] = [
+    let mut home = PathBuf::from(env::var("HOME").unwrap());
+    home.push(".mime.types");
+
+    let mime_paths: [&Path; 4] = [
+        &home.as_path(),
         Path::new("/usr/share/etc/mime.types"),
         Path::new("/usr/local/etc/mime.types"),
         Path::new("/etc/mime.types"),
@@ -47,7 +52,6 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::PathBuf;
 
     #[test]
     fn test_mime_types() {
