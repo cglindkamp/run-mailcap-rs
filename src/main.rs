@@ -69,7 +69,7 @@ fn mailcap_parse_line(line: &str, mime_type: &str) -> Option<MailcapEntry> {
                     copiousoutput: false,
                 };
                 for item in items {
-                    let mut keyvalue = item.split("=");
+                    let mut keyvalue = item.splitn(2, "=");
                     let key = keyvalue.nth(0);
                     let value = keyvalue.nth(0);
 
@@ -233,6 +233,7 @@ mod tests {
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].view, "less '%s'");
         assert_eq!(results[0].edit, "vi '%s'");
+        assert_eq!(results[0].test, "test \"$DISPLAY\" != \"\"");
         assert_eq!(results[0].needsterminal, true);
     }
 }
