@@ -112,11 +112,20 @@ fn mailcap_get_entries(mailcap_paths: &[&Path], mime_type: &str) -> Result<Vec<M
 
         let file = BufReader::new(file);
 
+        let mut fullline = String::from("");
         for line in file.lines() {
             match line {
-                Ok(line) => match mailcap_parse_line(&line, mime_type) {
-                    Some(entry) => entries.push(entry),
-                    None => continue,
+                Ok(line) => {
+                    fullline.push_str(&line);
+                    if fullline.ends_with("\\") {
+                        fullline.pop();
+                        continue;
+                    }
+                    match mailcap_parse_line(&fullline, mime_type) {
+                        Some(entry) => entries.push(entry),
+                        None => {},
+                    }
+                    fullline = String::from("");
                 },
                 Err(e) => return Err(e),
             }

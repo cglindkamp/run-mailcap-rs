@@ -1,1 +1,4 @@
-text/plain; less '%s'; edit=vi '%s'; needsterminal
+text/plain; less '%s'; \
+	edit=vi '%s'; \
+	needsterminal
+text/html; firefox '%s'
