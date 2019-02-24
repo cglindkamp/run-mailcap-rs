@@ -54,6 +54,51 @@ struct MailcapEntry {
     copiousoutput: bool,
 }
 
+fn mailcap_parse_line(line: &str, mime_type: &str) -> Option<MailcapEntry> {
+    let mut items = line.split(";");
+    if let Some(mime) = items.nth(0) {
+        if mime == mime_type {
+            if let Some(command) = items.nth(0) {
+                let mut entry = MailcapEntry {
+                    view: String::from(command.trim()),
+                    edit: String::from(""),
+                    compose: String::from(""),
+                    print: String::from(""),
+                    test: String::from(""),
+                    needsterminal: false,
+                    copiousoutput: false,
+                };
+                for item in items {
+                    let mut keyvalue = item.split("=");
+                    let key = keyvalue.nth(0);
+                    let value = keyvalue.nth(0);
+
+                    match value {
+                        Some(value) => {
+                            match key.unwrap().trim() {
+                                "edit" => entry.edit = String::from(value),
+                                "compose" => entry.compose = String::from(value),
+                                "print" => entry.print = String::from(value),
+                                "test" => entry.test = String::from(value),
+                                _ => continue,
+                            }
+                        }
+                        None => {
+                            match key.unwrap().trim() {
+                                "needsterminal" => entry.needsterminal = true,
+                                "copiousoutput" => entry.copiousoutput = true,
+                                _ => continue,
+                            }
+                        }
+                    }
+                }
+                return Some(entry);
+            }
+        }
+    }
+    None
+}
+
 fn mailcap_get_entries(mailcap_paths: &[&Path], mime_type: &str) -> Result<Vec<MailcapEntry>, io::Error> {
     let mut file_opened = false;
     let mut entries = Vec::new();
@@ -69,49 +114,10 @@ fn mailcap_get_entries(mailcap_paths: &[&Path], mime_type: &str) -> Result<Vec<M
 
         for line in file.lines() {
             match line {
-                Ok(line) => {
-                    let mut items = line.split(";");
-                    if let Some(mime) = items.nth(0) {
-                        if mime == mime_type {
-                            if let Some(command) = items.nth(0) {
-                                let mut entry = MailcapEntry {
-                                    view: String::from(command.trim()),
-                                    edit: String::from(""),
-                                    compose: String::from(""),
-                                    print: String::from(""),
-                                    test: String::from(""),
-                                    needsterminal: false,
-                                    copiousoutput: false,
-                                };
-                                for item in items {
-                                    let mut keyvalue = item.split("=");
-                                    let key = keyvalue.nth(0);
-                                    let value = keyvalue.nth(0);
-
-                                    match value {
-                                        Some(value) => {
-                                            match key.unwrap().trim() {
-                                                "edit" => entry.edit = String::from(value),
-                                                "compose" => entry.compose = String::from(value),
-                                                "print" => entry.print = String::from(value),
-                                                "test" => entry.test = String::from(value),
-                                                _ => continue,
-                                            }
-                                        }
-                                        None => {
-                                            match key.unwrap().trim() {
-                                                "needsterminal" => entry.needsterminal = true,
-                                                "copiousoutput" => entry.copiousoutput = true,
-                                                _ => continue,
-                                            }
-                                        }
-                                    }
-                                }
-                                entries.push(entry);
-                            }
-                        }
-                    }
-                }
+                Ok(line) => match mailcap_parse_line(&line, mime_type) {
+                    Some(entry) => entries.push(entry),
+                    None => continue,
+                },
                 Err(e) => return Err(e),
             }
         }
