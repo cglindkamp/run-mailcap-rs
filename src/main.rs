@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io::{self, BufReader};
 use std::io::prelude::*;
 use std::env;
+use std::vec::Vec;
 
 fn get_mime_type(mime_paths: &[&Path], extension: &str) -> Result<String, io::Error> {
     let mut file_opened = false;
@@ -42,6 +43,86 @@ fn get_mime_type(mime_paths: &[&Path], extension: &str) -> Result<String, io::Er
     }
 }
 
+#[derive(Debug)]
+struct MailcapEntry {
+    view: String,
+    edit: String,
+    compose: String,
+    print: String,
+    test: String,
+    needsterminal: bool,
+    copiousoutput: bool,
+}
+
+fn mailcap_get_entries(mailcap_paths: &[&Path], mime_type: &str) -> Result<Vec<MailcapEntry>, io::Error> {
+    let mut file_opened = false;
+    let mut entries = Vec::new();
+
+    for path in mailcap_paths {
+        let file = match File::open(&path) {
+            Ok(file) => file,
+            Err(_e) => continue,
+        };
+        file_opened = true;
+
+        let file = BufReader::new(file);
+
+        for line in file.lines() {
+            match line {
+                Ok(line) => {
+                    let mut items = line.split(";");
+                    if let Some(mime) = items.nth(0) {
+                        if mime == mime_type {
+                            if let Some(command) = items.nth(0) {
+                                let mut entry = MailcapEntry {
+                                    view: String::from(command.trim()),
+                                    edit: String::from(""),
+                                    compose: String::from(""),
+                                    print: String::from(""),
+                                    test: String::from(""),
+                                    needsterminal: false,
+                                    copiousoutput: false,
+                                };
+                                for item in items {
+                                    let mut keyvalue = item.split("=");
+                                    let key = keyvalue.nth(0);
+                                    let value = keyvalue.nth(0);
+
+                                    match value {
+                                        Some(value) => {
+                                            match key.unwrap().trim() {
+                                                "edit" => entry.edit = String::from(value),
+                                                "compose" => entry.compose = String::from(value),
+                                                "print" => entry.print = String::from(value),
+                                                "test" => entry.test = String::from(value),
+                                                _ => continue,
+                                            }
+                                        }
+                                        None => {
+                                            match key.unwrap().trim() {
+                                                "needsterminal" => entry.needsterminal = true,
+                                                "copiousoutput" => entry.copiousoutput = true,
+                                                _ => continue,
+                                            }
+                                        }
+                                    }
+                                }
+                                entries.push(entry);
+                            }
+                        }
+                    }
+                }
+                Err(e) => return Err(e),
+            }
+        }
+    }
+
+    if !file_opened {
+        return Err(io::Error::new(io::ErrorKind::NotFound, "No usable mailcap file found"));
+    }
+    Ok(entries)
+}
+
 fn main() {
     let mut home = PathBuf::from(env::var("HOME").unwrap());
     home.push(".mime.types");
@@ -52,7 +133,32 @@ fn main() {
         Path::new("/usr/local/etc/mime.types"),
         Path::new("/etc/mime.types"),
     ];
-    println!("{}", get_mime_type(&mime_paths, &env::args().nth(1).unwrap()).unwrap());
+    let mime_type = get_mime_type(&mime_paths, &env::args().nth(1).unwrap()).unwrap();
+
+    println!("{}", mime_type);
+
+    let mut home = PathBuf::from(env::var("HOME").unwrap());
+    home.push(".mailcap");
+
+    let mailcap_paths: [&Path; 5] = [
+        &home.as_path(),
+        Path::new("/etc/mailcap"),
+        Path::new("/usr/share/etc/mailcap"),
+        Path::new("/usr/local/etc/mailcap"),
+        Path::new("/usr/etc/mailcap"),
+    ];
+    let mailcap_entries = mailcap_get_entries(&mailcap_paths, &mime_type);
+
+    for entry in mailcap_entries.unwrap() {
+        println!("");
+        println!("view: {}", entry.view);
+        println!("edit: {}", entry.edit);
+        println!("compose: {}", entry.compose);
+        println!("print: {}", entry.print);
+        println!("test: {}", entry.test);
+        println!("needsterminal: {}", entry.needsterminal);
+        println!("copiousoutput: {}", entry.copiousoutput);
+    }
 }
 
 
@@ -80,5 +186,38 @@ mod tests {
         let mime_paths: [&Path; 1] = [&path.as_path()];
 
         assert_eq!(get_mime_type(&mime_paths, "txt").unwrap_err().kind(), io::ErrorKind::NotFound);
+    }
+
+    #[test]
+    fn test_mailcap_nonexistantfile() {
+        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        path.push("tests/data/mailcap.");
+
+        let mime_paths: [&Path; 1] = [&path.as_path()];
+        let results = mailcap_get_entries(&mime_paths, "text/plain").unwrap_err();
+        assert_eq!(results.kind(), io::ErrorKind::NotFound);
+    }
+
+    #[test]
+    fn test_mailcap_nonexistantentry() {
+        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        path.push("tests/data/mailcap");
+
+        let mime_paths: [&Path; 1] = [&path.as_path()];
+        let results = mailcap_get_entries(&mime_paths, "text/foo").unwrap();
+        assert_eq!(results.len(), 0);
+    }
+
+    #[test]
+    fn test_mailcap_singleentry() {
+        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        path.push("tests/data/mailcap");
+
+        let mime_paths: [&Path; 1] = [&path.as_path()];
+        let results = mailcap_get_entries(&mime_paths, "text/plain").unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].view, "less '%s'");
+        assert_eq!(results[0].edit, "vi '%s'");
+        assert_eq!(results[0].needsterminal, true);
     }
 }
