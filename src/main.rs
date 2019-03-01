@@ -19,19 +19,14 @@ fn get_mime_type(mime_paths: &[&Path], extension: &str) -> Result<String, io::Er
         let file = BufReader::new(file);
 
         for line in file.lines() {
-            match line {
-                Ok(line) => {
-                    let mut items = line.split_whitespace();
-                    let mime = items.nth(0);
-                    if let Some(mime) = mime {
-                        for s in line.split_whitespace() {
-                            if extension == s {
-                                return Ok(String::from(mime));
-                            }
-                        }
+            let line = line?;
+            let mut items = line.split_whitespace();
+            if let Some(mime) = items.next() {
+                for item in items {
+                    if extension == item {
+                        return Ok(String::from(mime));
                     }
                 }
-                Err(e) => return Err(e),
             }
         }
     }
@@ -56,22 +51,22 @@ struct MailcapEntry {
 
 fn mailcap_parse_line(line: &str, mime_type: &str) -> Option<MailcapEntry> {
     let mut items = line.split(";");
-    if let Some(mime) = items.nth(0) {
+    if let Some(mime) = items.next() {
         if mime == mime_type {
-            if let Some(command) = items.nth(0) {
+            if let Some(command) = items.next() {
                 let mut entry = MailcapEntry {
                     view: String::from(command.trim()),
-                    edit: String::from(""),
-                    compose: String::from(""),
-                    print: String::from(""),
-                    test: String::from(""),
+                    edit: String::new(),
+                    compose: String::new(),
+                    print: String::new(),
+                    test: String::new(),
                     needsterminal: false,
                     copiousoutput: false,
                 };
                 for item in items {
                     let mut keyvalue = item.splitn(2, "=");
-                    let key = keyvalue.nth(0);
-                    let value = keyvalue.nth(0);
+                    let key = keyvalue.next();
+                    let value = keyvalue.next();
 
                     match value {
                         Some(value) => {
@@ -112,23 +107,19 @@ fn mailcap_get_entries(mailcap_paths: &[&Path], mime_type: &str) -> Result<Vec<M
 
         let file = BufReader::new(file);
 
-        let mut fullline = String::from("");
+        let mut fullline = String::new();
         for line in file.lines() {
-            match line {
-                Ok(line) => {
-                    fullline.push_str(&line);
-                    if fullline.ends_with("\\") {
-                        fullline.pop();
-                        continue;
-                    }
-                    match mailcap_parse_line(&fullline, mime_type) {
-                        Some(entry) => entries.push(entry),
-                        None => {},
-                    }
-                    fullline = String::from("");
-                },
-                Err(e) => return Err(e),
+            let line = line?;
+            fullline.push_str(&line);
+            if fullline.ends_with("\\") {
+                fullline.pop();
+                continue;
             }
+            match mailcap_parse_line(&fullline, mime_type) {
+                Some(entry) => entries.push(entry),
+                None => {},
+            }
+            fullline = String::from("");
         }
     }
 
