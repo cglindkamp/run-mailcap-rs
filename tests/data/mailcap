@@ -1,3 +1,4 @@
+#text/plain; emacs '%s';
 text/plain; less '%s'; \
 	edit=vi '%s'; \
 	test=test "$DISPLAY" != ""; \

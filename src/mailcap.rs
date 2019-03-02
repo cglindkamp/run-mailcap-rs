@@ -90,11 +90,15 @@ pub fn get_entries(mailcap_paths: &[&Path], mime_type: &str) -> Result<Vec<Mailc
                 fullline.pop();
                 continue;
             }
+            if fullline.starts_with('#') {
+                fullline = String::new();
+                continue;
+            }
             match parse_line(&fullline, mime_type) {
                 Some(entry) => entries.push(entry),
                 None => {},
             }
-            fullline = String::from("");
+            fullline = String::new();
         }
     }
 
@@ -162,5 +166,15 @@ mod tests {
         assert_eq!(results[0].view, "mpv '%s'");
         assert_eq!(results[1].view, "mplayer '%s'");
         assert_eq!(results[2].view, "hexdump '%s'");
+    }
+
+    #[test]
+    fn test_mailcap_ignorecomments() {
+        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        path.push("tests/data/mailcap");
+
+        let mime_paths: [&Path; 1] = [&path.as_path()];
+        let results = get_entries(&mime_paths, "#text/plain").unwrap();
+        assert_eq!(results.len(), 0);
     }
 }
