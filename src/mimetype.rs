@@ -18,6 +18,9 @@ pub fn get_type(mime_paths: &[&Path], extension: &str) -> Result<String, io::Err
 
         for line in file.lines() {
             let line = line?;
+            if line.starts_with('#') {
+                continue;
+            }
             let mut items = line.split_whitespace();
             if let Some(mime) = items.next() {
                 for item in items {
@@ -50,6 +53,7 @@ mod tests {
         assert_eq!(get_type(&mime_paths, "mp4").unwrap(), "video/mp4");
         assert_eq!(get_type(&mime_paths, "txt").unwrap(), "text/plain");
         assert_eq!(get_type(&mime_paths, "").unwrap(), "application/octet-stream");
+        assert_eq!(get_type(&mime_paths, "html").unwrap(), "application/octet-stream");
     }
 
     #[test]
