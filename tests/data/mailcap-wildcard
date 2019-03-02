@@ -1,0 +1,8 @@
+text/plain; less '%s'; \
+	edit=vi '%s'; \
+	test=test "$DISPLAY" != ""; \
+	needsterminal
+text/*; cat '%s';
+video/x-matroska; mpv '%s'
+video; mplayer '%s'
+*/*; hexdump '%s'

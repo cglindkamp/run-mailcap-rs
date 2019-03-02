@@ -49,10 +49,19 @@ struct MailcapEntry {
     copiousoutput: bool,
 }
 
+fn mailcap_mime_types_match(mailcap_mime_type: &str, mime_type: &str) -> bool {
+    let mailcap_mime_parts = mailcap_mime_type.split('/');
+    let mime_parts = mime_type.split('/');
+
+    let mut parts = mailcap_mime_parts.zip(mime_parts);
+
+    parts.all(|part| part.0 == "*" || part.0 == part.1)
+}
+
 fn mailcap_parse_line(line: &str, mime_type: &str) -> Option<MailcapEntry> {
     let mut items = line.split(";");
     if let Some(mime) = items.next() {
-        if mime == mime_type {
+        if mailcap_mime_types_match(mime, mime_type) {
             if let Some(command) = items.next() {
                 let mut entry = MailcapEntry {
                     view: String::from(command.trim()),
@@ -226,5 +235,27 @@ mod tests {
         assert_eq!(results[0].edit, "vi '%s'");
         assert_eq!(results[0].test, "test \"$DISPLAY\" != \"\"");
         assert_eq!(results[0].needsterminal, true);
+    }
+
+    #[test]
+    fn test_mailcap_wildcardentry() {
+        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        path.push("tests/data/mailcap-wildcard");
+
+        let mime_paths: [&Path; 1] = [&path.as_path()];
+        let results = mailcap_get_entries(&mime_paths, "text/plain").unwrap();
+        assert_eq!(results.len(), 3);
+        assert_eq!(results[0].view, "less '%s'");
+        assert_eq!(results[0].edit, "vi '%s'");
+        assert_eq!(results[0].test, "test \"$DISPLAY\" != \"\"");
+        assert_eq!(results[0].needsterminal, true);
+        assert_eq!(results[1].view, "cat '%s'");
+        assert_eq!(results[2].view, "hexdump '%s'");
+
+        let results = mailcap_get_entries(&mime_paths, "video/x-matroska").unwrap();
+        assert_eq!(results.len(), 3);
+        assert_eq!(results[0].view, "mpv '%s'");
+        assert_eq!(results[1].view, "mplayer '%s'");
+        assert_eq!(results[2].view, "hexdump '%s'");
     }
 }
