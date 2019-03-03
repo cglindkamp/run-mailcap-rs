@@ -3,8 +3,14 @@ use std::fs::File;
 use std::io::{self, BufReader};
 use std::io::prelude::*;
 
-pub fn get_type(mime_paths: &[&Path], extension: &str) -> Result<String, io::Error> {
+pub fn get_type(mime_paths: &[&Path], filename: &str) -> Result<String, io::Error> {
     let mut file_opened = false;
+
+    if !filename.contains('.') {
+        return Ok(String::from("application/octet-stream"));
+    }
+
+    let extension = filename.rsplit('.').next().unwrap();
 
     for path in mime_paths {
         let file = match File::open(&path) {
@@ -50,10 +56,10 @@ mod tests {
 
         let mime_paths: [&Path; 1] = [&path.as_path()];
 
-        assert_eq!(get_type(&mime_paths, "mp4").unwrap(), "video/mp4");
-        assert_eq!(get_type(&mime_paths, "txt").unwrap(), "text/plain");
-        assert_eq!(get_type(&mime_paths, "").unwrap(), "application/octet-stream");
-        assert_eq!(get_type(&mime_paths, "html").unwrap(), "application/octet-stream");
+        assert_eq!(get_type(&mime_paths, "test.mp4").unwrap(), "video/mp4");
+        assert_eq!(get_type(&mime_paths, "test.txt").unwrap(), "text/plain");
+        assert_eq!(get_type(&mime_paths, "test").unwrap(), "application/octet-stream");
+        assert_eq!(get_type(&mime_paths, "test.html").unwrap(), "application/octet-stream");
     }
 
     #[test]
@@ -63,7 +69,7 @@ mod tests {
 
         let mime_paths: [&Path; 1] = [&path.as_path()];
 
-        assert_eq!(get_type(&mime_paths, "txt").unwrap_err().kind(), io::ErrorKind::NotFound);
+        assert_eq!(get_type(&mime_paths, "test.txt").unwrap_err().kind(), io::ErrorKind::NotFound);
     }
 }
 
