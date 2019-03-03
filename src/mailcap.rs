@@ -1,5 +1,4 @@
 use std::path::Path;
-use std::path::PathBuf;
 use std::fs::File;
 use std::io::{self, BufReader};
 use std::io::prelude::*;
@@ -110,6 +109,7 @@ pub fn get_entries(mailcap_paths: &[&Path], mime_type: &str) -> Result<Vec<Mailc
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
     use super::*;
 
     #[test]
