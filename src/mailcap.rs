@@ -15,12 +15,14 @@ pub struct MailcapEntry {
 }
 
 fn mime_types_match(mailcap_mime_type: &str, mime_type: &str) -> bool {
-    let mailcap_mime_parts = mailcap_mime_type.split('/');
+    let mut mailcap_mime_parts = mailcap_mime_type.split('/');
     let mime_parts = mime_type.split('/');
-
-    let mut parts = mailcap_mime_parts.zip(mime_parts);
-
-    parts.all(|part| part.0 == "*" || part.0 == part.1)
+    let matches;
+    {
+        let mut parts = mailcap_mime_parts.by_ref().take(2).zip(mime_parts);
+        matches = parts.all(|part| part.0 == "*" || part.0 == part.1);
+    }
+    matches && mailcap_mime_parts.count() == 0
 }
 
 fn parse_line(line: &str, mime_type: &str) -> Option<MailcapEntry> {

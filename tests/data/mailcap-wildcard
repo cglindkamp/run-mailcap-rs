@@ -6,3 +6,4 @@ text/*; cat '%s';
 video/x-matroska; mpv '%s'
 video; mplayer '%s'
 */*; hexdump '%s'
+*/*/*; cat
