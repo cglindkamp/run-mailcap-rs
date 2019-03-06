@@ -28,6 +28,9 @@ pub fn get_type(mime_paths: &[&Path], filename: &str) -> Result<String, io::Erro
             }
             let mut items = line.split_whitespace();
             if let Some(mime) = items.next() {
+                if mime.matches('/').count() != 1 {
+                    continue;
+                }
                 for item in items {
                     if extension == item {
                         return Ok(String::from(mime));
