@@ -1,11 +1,34 @@
 use std::path::Path;
 use std::path::PathBuf;
+use std::process::Command;
 use std::env;
 
 mod mailcap;
 mod mimetype;
 
+fn run_mailcap(action: &str, filename: &str, mailcap_entries: &Vec<mailcap::MailcapEntry>) {
+    for entry in mailcap_entries {
+        let command = match action {
+            "view" => &entry.view,
+            "edit" => &entry.edit,
+            "compose" => &entry.compose,
+            "print" => &entry.print,
+            _ => &entry.view,
+        };
+        if command != "" {
+            let command = command.replace("%s", filename);
+            let _status = Command::new("sh")
+                .arg("-c")
+                .arg(command)
+                .status();
+            return;
+        }
+    }
+}
+
 fn main() {
+    let action = env::args().nth(1).unwrap();
+    let filename = env::args().nth(2).unwrap();
     let mut home = PathBuf::from(env::var("HOME").unwrap());
     home.push(".mime.types");
 
@@ -15,7 +38,7 @@ fn main() {
         Path::new("/usr/local/etc/mime.types"),
         Path::new("/etc/mime.types"),
     ];
-    let mime_type = mimetype::get_type(&mime_paths, &env::args().nth(1).unwrap()).unwrap();
+    let mime_type = mimetype::get_type(&mime_paths, &filename).unwrap();
 
     println!("{}", mime_type);
 
@@ -29,9 +52,9 @@ fn main() {
         Path::new("/usr/local/etc/mailcap"),
         Path::new("/usr/etc/mailcap"),
     ];
-    let mailcap_entries = mailcap::get_entries(&mailcap_paths, &mime_type);
+    let mailcap_entries = mailcap::get_entries(&mailcap_paths, &mime_type).unwrap();
 
-    for entry in mailcap_entries.unwrap() {
+    for entry in &mailcap_entries {
         println!("");
         println!("view: {}", entry.view);
         println!("edit: {}", entry.edit);
@@ -41,5 +64,7 @@ fn main() {
         println!("needsterminal: {}", entry.needsterminal);
         println!("copiousoutput: {}", entry.copiousoutput);
     }
+
+    run_mailcap(&action, &filename, &mailcap_entries);
 }
 
