@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::env;
 
+mod config;
 mod mailcap;
 mod mimetype;
 
@@ -27,8 +28,7 @@ fn run_mailcap(action: &str, filename: &str, mailcap_entries: &Vec<mailcap::Mail
 }
 
 fn main() {
-    let action = env::args().nth(1).unwrap();
-    let filename = env::args().nth(2).unwrap();
+    let config = config::Config::parse(env::args()).unwrap();
     let mut home = PathBuf::from(env::var("HOME").unwrap());
     home.push(".mime.types");
 
@@ -38,7 +38,7 @@ fn main() {
         Path::new("/usr/local/etc/mime.types"),
         Path::new("/etc/mime.types"),
     ];
-    let mime_type = mimetype::get_type(&mime_paths, &filename).unwrap();
+    let mime_type = mimetype::get_type(&mime_paths, &config.filename).unwrap();
 
     println!("{}", mime_type);
 
@@ -65,6 +65,6 @@ fn main() {
         println!("copiousoutput: {}", entry.copiousoutput);
     }
 
-    run_mailcap(&action, &filename, &mailcap_entries);
+    run_mailcap(&config.action, &config.filename, &mailcap_entries);
 }
 
