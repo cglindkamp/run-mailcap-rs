@@ -1,7 +1,40 @@
 #[derive(Debug)]
+#[derive(PartialEq)]
+pub enum Action {
+    View,
+    Cat,
+    Edit,
+    Compose,
+    Print,
+}
+
+impl Action {
+    fn from(actionstr: &str) -> Action {
+        match actionstr {
+            "view" => Action::View,
+            "cat" => Action::Cat,
+            "edit" => Action::Edit,
+            "compose" => Action::Compose,
+            "print" => Action::Print,
+            _ => Action::View,
+        }
+    }
+
+    fn from_program_name(programname: &str) -> Action {
+        let programname = programname.trim_end_matches("-rs");
+        match programname {
+            "see" => Action::View,
+            "change" => Action::Edit,
+            "create" => Action::Compose,
+            _ => Action::from(programname),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct Config {
     pub filename: String,
-    pub action: String,
+    pub action: Action,
 }
 
 impl Config {
@@ -11,25 +44,7 @@ impl Config {
     {
         let programname = args.next().unwrap();
         let programname = programname.rsplit('/').next().unwrap();
-        let mut action = match programname {
-            "view" => String::from("view"),
-            "view-rs" => String::from("view"),
-            "see" => String::from("view"),
-            "see-rs" => String::from("view"),
-            "cat" => String::from("cat"),
-            "cat-rs" => String::from("cat"),
-            "edit" => String::from("edit"),
-            "edit-rs" => String::from("edit"),
-            "change" => String::from("edit"),
-            "change-rs" => String::from("edit"),
-            "compose" => String::from("compose"),
-            "compose-rs" => String::from("compose"),
-            "create" => String::from("compose"),
-            "create-rs" => String::from("compose"),
-            "print" => String::from("print"),
-            "print-rs" => String::from("print"),
-            _ => String::from("view"),
-        };
+        let mut action = Action::from_program_name(programname);
         let mut filename = String::new();
 
         for argument in args {
@@ -39,7 +54,7 @@ impl Config {
                 let value = argument_parts.next().unwrap_or("");
 
                 match key {
-                    "--action" => action = String::from(value),
+                    "--action" => action = Action::from(value),
                     _ => {},
                 }
             } else {
@@ -82,7 +97,7 @@ mod tests {
         let config = Config::parse(args.into_iter()).unwrap();
 
         assert_eq!(config.filename, "test.txt");
-        assert_eq!(config.action, "view");
+        assert_eq!(config.action, Action::View);
     }
 
     #[test]
@@ -95,7 +110,7 @@ mod tests {
         let config = Config::parse(args.into_iter()).unwrap();
 
         assert_eq!(config.filename, "test.txt");
-        assert_eq!(config.action, "edit");
+        assert_eq!(config.action, Action::Edit);
     }
 
     #[test]
@@ -107,7 +122,7 @@ mod tests {
         let config = Config::parse(args.into_iter()).unwrap();
 
         assert_eq!(config.filename, "test.txt");
-        assert_eq!(config.action, "compose");
+        assert_eq!(config.action, Action::Compose);
     }
 
     #[test]
@@ -119,7 +134,7 @@ mod tests {
         let config = Config::parse(args.into_iter()).unwrap();
 
         assert_eq!(config.filename, "test.txt");
-        assert_eq!(config.action, "compose");
+        assert_eq!(config.action, Action::Compose);
     }
 
     #[test]
@@ -132,7 +147,7 @@ mod tests {
         let config = Config::parse(args.into_iter()).unwrap();
 
         assert_eq!(config.filename, "test.txt");
-        assert_eq!(config.action, "edit");
+        assert_eq!(config.action, Action::Edit);
     }
 }
 

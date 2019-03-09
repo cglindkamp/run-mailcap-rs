@@ -7,17 +7,19 @@ mod config;
 mod mailcap;
 mod mimetype;
 
-fn run_mailcap(action: &str, filename: &str, mailcap_entries: &Vec<mailcap::MailcapEntry>) {
+use config::Action;
+
+fn run_mailcap(config: config::Config, mailcap_entries: &Vec<mailcap::MailcapEntry>) {
     for entry in mailcap_entries {
-        let command = match action {
-            "view" => &entry.view,
-            "edit" => &entry.edit,
-            "compose" => &entry.compose,
-            "print" => &entry.print,
-            _ => &entry.view,
+        let command = match config.action {
+            Action::View => &entry.view,
+            Action::Cat => &entry.view,
+            Action::Edit => &entry.edit,
+            Action::Compose => &entry.compose,
+            Action::Print => &entry.print,
         };
         if command != "" {
-            let command = command.replace("%s", filename);
+            let command = command.replace("%s", &config.filename);
             let _status = Command::new("sh")
                 .arg("-c")
                 .arg(command)
@@ -65,6 +67,6 @@ fn main() {
         println!("copiousoutput: {}", entry.copiousoutput);
     }
 
-    run_mailcap(&config.action, &config.filename, &mailcap_entries);
+    run_mailcap(config, &mailcap_entries);
 }
 
