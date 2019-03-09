@@ -26,7 +26,7 @@ fn mime_types_match(mailcap_mime_type: &str, mime_type: &str) -> bool {
 }
 
 fn parse_line(line: &str, mime_type: &str) -> Option<MailcapEntry> {
-    let mut items = line.split(";");
+    let mut items = line.split(';');
     if let Some(mime) = items.next() {
         if mime_types_match(mime, mime_type) {
             if let Some(command) = items.next() {
@@ -40,7 +40,7 @@ fn parse_line(line: &str, mime_type: &str) -> Option<MailcapEntry> {
                     copiousoutput: false,
                 };
                 for item in items {
-                    let mut keyvalue = item.splitn(2, "=");
+                    let mut keyvalue = item.splitn(2, '=');
                     let key = keyvalue.next();
                     let value = keyvalue.next();
 
@@ -87,7 +87,7 @@ pub fn get_entries(mailcap_paths: &[&Path], mime_type: &str) -> Result<Vec<Mailc
         for line in file.lines() {
             let line = line?;
             fullline.push_str(&line);
-            if fullline.ends_with("\\") {
+            if fullline.ends_with('\\') {
                 fullline.pop();
                 continue;
             }
@@ -95,9 +95,8 @@ pub fn get_entries(mailcap_paths: &[&Path], mime_type: &str) -> Result<Vec<Mailc
                 fullline = String::new();
                 continue;
             }
-            match parse_line(&fullline, mime_type) {
-                Some(entry) => entries.push(entry),
-                None => {},
+            if let Some(entry) = parse_line(&fullline, mime_type) {
+                entries.push(entry);
             }
             fullline = String::new();
         }

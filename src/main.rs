@@ -9,7 +9,7 @@ mod mimetype;
 
 use config::Action;
 
-fn run_mailcap(config: config::Config, mailcap_entries: &Vec<mailcap::MailcapEntry>) {
+fn run_mailcap(config: &config::Config, mailcap_entries: &[mailcap::MailcapEntry]) {
     for entry in mailcap_entries {
         let command = match config.action {
             Action::View => &entry.view,
@@ -57,7 +57,7 @@ fn main() {
     let mailcap_entries = mailcap::get_entries(&mailcap_paths, &mime_type).unwrap();
 
     for entry in &mailcap_entries {
-        println!("");
+        println!();
         println!("view: {}", entry.view);
         println!("edit: {}", entry.edit);
         println!("compose: {}", entry.compose);
@@ -67,6 +67,6 @@ fn main() {
         println!("copiousoutput: {}", entry.copiousoutput);
     }
 
-    run_mailcap(config, &mailcap_entries);
+    run_mailcap(&config, &mailcap_entries);
 }
 

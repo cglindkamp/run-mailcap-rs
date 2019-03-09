@@ -49,7 +49,7 @@ impl Config {
 
         for argument in args {
             if argument.starts_with("--") {
-                let mut argument_parts = argument.splitn(2, "=");
+                let mut argument_parts = argument.splitn(2, '=');
                 let key = argument_parts.next().unwrap();
                 let value = argument_parts.next().unwrap_or("");
 
