@@ -10,7 +10,7 @@ mod mimetype;
 use config::Config;
 
 fn main() {
-    let config = Config::parse(env::args()).unwrap();
+    let config = Config::parse(env::args(), env::vars()).unwrap();
     let mut home = PathBuf::from(env::var("HOME").unwrap());
     home.push(".mime.types");
 

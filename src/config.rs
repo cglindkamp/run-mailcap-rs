@@ -35,19 +35,28 @@ impl Action {
 pub struct Config {
     pub filename: String,
     pub action: Action,
+    pub xtermcmd: String,
 }
 
 impl Config {
-    pub fn parse<T>(args: T) -> Result<Config, &'static str>
+    pub fn parse<IA, IE>(args: IA, envvars: IE) -> Result<Config, &'static str>
     where
-        T: IntoIterator<Item = String>,
+        IA: IntoIterator<Item = String>,
+        IE: IntoIterator<Item = (String, String)>,
     {
         let mut args = args.into_iter();
         let programname = args.next().unwrap();
         let programname = programname.rsplit('/').next().unwrap();
         let mut action = Action::from_program_name(programname);
         let mut filename = String::new();
+        let mut xtermcmd = String::from("xterm");
 
+        for (key, value) in envvars {
+            match key.as_ref() {
+                "XTERMCMD" => xtermcmd = value,
+                _ => {},
+            }
+        };
         for argument in args {
             if argument.starts_with("--") {
                 let mut argument_parts = argument.splitn(2, '=');
@@ -66,7 +75,7 @@ impl Config {
         if filename == "" {
             Err("No filename was given in arguments")
         } else {
-            Ok(Config { filename, action })
+            Ok(Config { filename, action, xtermcmd })
         }
     }
 }
@@ -79,26 +88,30 @@ mod tests {
     #[should_panic]
     fn test_config_empty_args() {
         let args = Vec::new();
-        let _config = Config::parse(args.into_iter());
+        let env = Vec::new();
+        let _config = Config::parse(args, env);
     }
 
     #[test]
     fn test_config_only_programname_in_args() {
         let args = vec![String::from("run-mailcap-rs")];
-        let config = Config::parse(args.into_iter());
+        let env = Vec::new();
+        let config = Config::parse(args, env);
         config.unwrap_err();
     }
 
     #[test]
-    fn test_config_filename_in_args() {
+    fn test_config_defaults() {
         let args = vec![
             String::from("run-mailcap-rs"),
             String::from("test.txt"),
         ];
-        let config = Config::parse(args.into_iter()).unwrap();
+        let env = Vec::new();
+        let config = Config::parse(args, env).unwrap();
 
         assert_eq!(config.filename, "test.txt");
         assert_eq!(config.action, Action::View);
+        assert_eq!(config.xtermcmd, "xterm");
     }
 
     #[test]
@@ -108,7 +121,8 @@ mod tests {
             String::from("--action=edit"),
             String::from("test.txt"),
         ];
-        let config = Config::parse(args.into_iter()).unwrap();
+        let env = Vec::new();
+        let config = Config::parse(args, env).unwrap();
 
         assert_eq!(config.filename, "test.txt");
         assert_eq!(config.action, Action::Edit);
@@ -120,7 +134,8 @@ mod tests {
             String::from("compose"),
             String::from("test.txt"),
         ];
-        let config = Config::parse(args.into_iter()).unwrap();
+        let env = Vec::new();
+        let config = Config::parse(args, env).unwrap();
 
         assert_eq!(config.filename, "test.txt");
         assert_eq!(config.action, Action::Compose);
@@ -132,7 +147,8 @@ mod tests {
             String::from("/usr/bin/compose"),
             String::from("test.txt"),
         ];
-        let config = Config::parse(args.into_iter()).unwrap();
+        let env = Vec::new();
+        let config = Config::parse(args, env).unwrap();
 
         assert_eq!(config.filename, "test.txt");
         assert_eq!(config.action, Action::Compose);
@@ -145,10 +161,25 @@ mod tests {
             String::from("--action=edit"),
             String::from("test.txt"),
         ];
-        let config = Config::parse(args.into_iter()).unwrap();
+        let env = Vec::new();
+        let config = Config::parse(args, env).unwrap();
 
         assert_eq!(config.filename, "test.txt");
         assert_eq!(config.action, Action::Edit);
+    }
+
+    #[test]
+    fn test_config_xtermcmd_from_env() {
+        let args = vec![
+            String::from("run-mailcap-rs"),
+            String::from("test.txt"),
+        ];
+        let env = vec![
+            (String::from("XTERMCMD"), String::from("urxvt")),
+        ];
+        let config = Config::parse(args, env).unwrap();
+
+        assert_eq!(config.xtermcmd, "urxvt");
     }
 }
 

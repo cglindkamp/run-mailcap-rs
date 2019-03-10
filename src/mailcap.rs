@@ -224,19 +224,22 @@ mod tests {
         ];
         let filename = String::from("test.txt");
         let action = Action::View;
-        let config = Config { filename , action };
+        let xtermcmd = String::from("xterm");
+        let config = Config { filename , action, xtermcmd };
 
         assert_eq!(get_final_command(&config, &entries).unwrap(), "cat 'test.txt'");
 
         let filename = String::from("test.txt");
         let action = Action::Edit;
-        let config = Config { filename , action };
+        let xtermcmd = String::from("xterm");
+        let config = Config { filename , action, xtermcmd };
 
         assert_eq!(get_final_command(&config, &entries).unwrap(), "vim 'test.txt'");
 
         let filename = String::from("test.txt");
         let action = Action::Compose;
-        let config = Config { filename , action };
+        let xtermcmd = String::from("xterm");
+        let config = Config { filename , action, xtermcmd };
 
         assert_eq!(get_final_command(&config, &entries), None);
     }
