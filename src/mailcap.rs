@@ -132,7 +132,11 @@ where
             Action::Print => &entry.print,
         };
         if command != "" {
-            let command = command.replace("%s", &config.filename);
+            let mut command = command.replace("%s", &config.filename);
+
+            if entry.copiousoutput && config.action != Action::Print {
+                command = command + "|" + &config.pager;
+            }
 
             if entry.needsterminal && config.action != Action::Print {
                 if isatty {
@@ -287,6 +291,41 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(get_final_command(&config, false, &entries).unwrap(), "urxvt -T \"vim 'test.txt'\" -e sh -c \"vim 'test.txt'\"");
+
+        let config = Config {
+            filename: String::from("test.txt"),
+            action: Action::Print,
+            ..Default::default()
+        };
+        assert_eq!(get_final_command(&config, false, &entries).unwrap(), "lpr 'test.txt'");
+    }
+
+    #[test]
+    fn test_final_command_copiousoutput() {
+        let entries: [MailcapEntry; 1] = [
+            MailcapEntry{
+                view: String::from("cat '%s'"),
+                edit: String::new(),
+                compose: String::new(),
+                print: String::from("lpr '%s'"),
+                test: String::new(),
+                copiousoutput: true,
+                needsterminal: true,
+            },
+        ];
+
+        let config = Config {
+            filename: String::from("test.txt"),
+            ..Default::default()
+        };
+        assert_eq!(get_final_command(&config, true, &entries).unwrap(), "cat 'test.txt'|less");
+
+        let config = Config {
+            filename: String::from("test.txt"),
+            running_in_x: true,
+            ..Default::default()
+        };
+        assert_eq!(get_final_command(&config, false, &entries).unwrap(), "xterm -T \"cat 'test.txt'|less\" -e sh -c \"cat 'test.txt'|less\"");
 
         let config = Config {
             filename: String::from("test.txt"),
