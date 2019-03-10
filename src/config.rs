@@ -38,10 +38,11 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn parse<T>(mut args: T) -> Result<Config, &'static str>
+    pub fn parse<T>(args: T) -> Result<Config, &'static str>
     where
-        T: Iterator<Item = String>,
+        T: IntoIterator<Item = String>,
     {
+        let mut args = args.into_iter();
         let programname = args.next().unwrap();
         let programname = programname.rsplit('/').next().unwrap();
         let mut action = Action::from_program_name(programname);
