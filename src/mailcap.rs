@@ -225,21 +225,24 @@ mod tests {
         let filename = String::from("test.txt");
         let action = Action::View;
         let xtermcmd = String::from("xterm");
-        let config = Config { filename , action, xtermcmd };
+        let running_in_x = false;
+        let config = Config { filename , action, xtermcmd, running_in_x };
 
         assert_eq!(get_final_command(&config, &entries).unwrap(), "cat 'test.txt'");
 
         let filename = String::from("test.txt");
         let action = Action::Edit;
         let xtermcmd = String::from("xterm");
-        let config = Config { filename , action, xtermcmd };
+        let running_in_x = false;
+        let config = Config { filename , action, xtermcmd, running_in_x };
 
         assert_eq!(get_final_command(&config, &entries).unwrap(), "vim 'test.txt'");
 
         let filename = String::from("test.txt");
         let action = Action::Compose;
         let xtermcmd = String::from("xterm");
-        let config = Config { filename , action, xtermcmd };
+        let running_in_x = false;
+        let config = Config { filename , action, xtermcmd, running_in_x };
 
         assert_eq!(get_final_command(&config, &entries), None);
     }

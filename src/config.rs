@@ -36,6 +36,7 @@ pub struct Config {
     pub filename: String,
     pub action: Action,
     pub xtermcmd: String,
+    pub running_in_x: bool,
 }
 
 impl Config {
@@ -50,10 +51,12 @@ impl Config {
         let mut action = Action::from_program_name(programname);
         let mut filename = String::new();
         let mut xtermcmd = String::from("xterm");
+        let mut running_in_x = false;
 
         for (key, value) in envvars {
             match key.as_ref() {
                 "XTERMCMD" => xtermcmd = value,
+                "DISPLAY" => running_in_x = true,
                 _ => {},
             }
         };
@@ -75,7 +78,7 @@ impl Config {
         if filename == "" {
             Err("No filename was given in arguments")
         } else {
-            Ok(Config { filename, action, xtermcmd })
+            Ok(Config { filename, action, xtermcmd, running_in_x })
         }
     }
 }
@@ -112,6 +115,7 @@ mod tests {
         assert_eq!(config.filename, "test.txt");
         assert_eq!(config.action, Action::View);
         assert_eq!(config.xtermcmd, "xterm");
+        assert_eq!(config.running_in_x, false);
     }
 
     #[test]
@@ -180,6 +184,20 @@ mod tests {
         let config = Config::parse(args, env).unwrap();
 
         assert_eq!(config.xtermcmd, "urxvt");
+    }
+
+    #[test]
+    fn test_config_running_in_x_from_env() {
+        let args = vec![
+            String::from("run-mailcap-rs"),
+            String::from("test.txt"),
+        ];
+        let env = vec![
+            (String::from("DISPLAY"), String::from(":0")),
+        ];
+        let config = Config::parse(args, env).unwrap();
+
+        assert_eq!(config.running_in_x, true);
     }
 }
 
