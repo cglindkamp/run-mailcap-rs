@@ -119,7 +119,7 @@ pub fn get_entries(mailcap_paths: &[&Path], mime_type: &str) -> Result<Vec<Mailc
     Ok(entries)
 }
 
-pub fn get_final_command<'a, I>(config: &Config, mailcap_entries: I) -> Option<String>
+pub fn get_final_command<'a, I>(config: &Config, isatty: bool, mailcap_entries: I) -> Option<String>
 where
     I: IntoIterator<Item = &'a MailcapEntry>,
 {
@@ -132,7 +132,19 @@ where
             Action::Print => &entry.print,
         };
         if command != "" {
-            return Some(command.replace("%s", &config.filename));
+            let command = command.replace("%s", &config.filename);
+
+            if entry.needsterminal && config.action != Action::Print {
+                if isatty {
+                    return Some(command);
+                } else if config.running_in_x {
+                    return Some(format!("{} -T \"{}\" -e sh -c \"{}\"", config.xtermcmd, command, command));
+                } else {
+                    return None
+                }
+            } else {
+                return Some(command);
+            }
         }
     }
     None
@@ -219,16 +231,16 @@ mod tests {
                 print: String::new(),
                 test: String::new(),
                 copiousoutput: false,
-                needsterminal: false,
+                needsterminal: true,
             },
             MailcapEntry{
                 view: String::new(),
                 edit: String::from("vim '%s'"),
                 compose: String::new(),
-                print: String::new(),
+                print: String::from("lpr '%s'"),
                 test: String::new(),
                 copiousoutput: false,
-                needsterminal: false,
+                needsterminal: true,
             },
         ];
 
@@ -236,20 +248,51 @@ mod tests {
             filename: String::from("test.txt"),
             ..Default::default()
         };
-        assert_eq!(get_final_command(&config, &entries).unwrap(), "cat 'test.txt'");
+        assert_eq!(get_final_command(&config, true, &entries).unwrap(), "cat 'test.txt'");
 
         let config = Config {
             filename: String::from("test.txt"),
             action: Action::Edit,
             ..Default::default()
         };
-        assert_eq!(get_final_command(&config, &entries).unwrap(), "vim 'test.txt'");
+        assert_eq!(get_final_command(&config, true, &entries).unwrap(), "vim 'test.txt'");
 
         let config = Config {
             filename: String::from("test.txt"),
             action: Action::Compose,
             ..Default::default()
         };
-        assert_eq!(get_final_command(&config, &entries), None);
+        assert_eq!(get_final_command(&config, true, &entries), None);
+
+        let config = Config {
+            filename: String::from("test.txt"),
+            action: Action::Edit,
+            ..Default::default()
+        };
+        assert_eq!(get_final_command(&config, false, &entries), None);
+
+        let config = Config {
+            filename: String::from("test.txt"),
+            action: Action::Edit,
+            running_in_x: true,
+            ..Default::default()
+        };
+        assert_eq!(get_final_command(&config, false, &entries).unwrap(), "xterm -T \"vim 'test.txt'\" -e sh -c \"vim 'test.txt'\"");
+
+        let config = Config {
+            filename: String::from("test.txt"),
+            action: Action::Edit,
+            xtermcmd: String::from("urxvt"),
+            running_in_x: true,
+            ..Default::default()
+        };
+        assert_eq!(get_final_command(&config, false, &entries).unwrap(), "urxvt -T \"vim 'test.txt'\" -e sh -c \"vim 'test.txt'\"");
+
+        let config = Config {
+            filename: String::from("test.txt"),
+            action: Action::Print,
+            ..Default::default()
+        };
+        assert_eq!(get_final_command(&config, false, &entries).unwrap(), "lpr 'test.txt'");
     }
 }
