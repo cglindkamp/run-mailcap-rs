@@ -50,10 +50,14 @@ fn main() {
     }
 
     if let Some(command) = mailcap::get_final_command(&config, atty::is(atty::Stream::Stdout), &mailcap_entries) {
-        let _status = Command::new("sh")
-            .arg("-c")
-            .arg(command)
-            .status();
+        if config.norun {
+            println!("{}", command);
+        } else {
+            let _status = Command::new("sh")
+                .arg("-c")
+                .arg(command)
+                .status();
+        }
     }
 }
 
