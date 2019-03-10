@@ -16,6 +16,20 @@ pub struct MailcapEntry {
     pub copiousoutput: bool,
 }
 
+impl Default for MailcapEntry {
+    fn default() -> Self {
+        MailcapEntry {
+            view: String::new(),
+            edit: String::new(),
+            compose: String::new(),
+            print: String::new(),
+            test: String::new(),
+            needsterminal: false,
+            copiousoutput: false,
+        }
+    }
+}
+
 fn mime_types_match(mailcap_mime_type: &str, mime_type: &str) -> bool {
     let mut mailcap_mime_parts = mailcap_mime_type.split('/');
     let mime_parts = mime_type.split('/');
@@ -32,14 +46,9 @@ fn parse_line(line: &str, mime_type: &str) -> Option<MailcapEntry> {
     if let Some(mime) = items.next() {
         if mime_types_match(mime, mime_type) {
             if let Some(command) = items.next() {
-                let mut entry = MailcapEntry {
+                let mut entry: MailcapEntry = MailcapEntry {
                     view: String::from(command.trim()),
-                    edit: String::new(),
-                    compose: String::new(),
-                    print: String::new(),
-                    test: String::new(),
-                    needsterminal: false,
-                    copiousoutput: false,
+                    ..Default::default()
                 };
                 for item in items {
                     let mut keyvalue = item.splitn(2, '=');
