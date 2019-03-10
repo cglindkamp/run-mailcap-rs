@@ -37,6 +37,7 @@ pub struct Config {
     pub action: Action,
     pub xtermcmd: String,
     pub running_in_x: bool,
+    pub debug: bool,
     pub norun: bool,
 }
 
@@ -47,6 +48,7 @@ impl Default for Config {
            action: Action::View,
            xtermcmd: String::from("xterm"),
            running_in_x: false,
+           debug: false,
            norun: false,
        }
    }
@@ -81,6 +83,7 @@ impl Config {
 
                 match key {
                     "--action" => config.action = Action::from(value),
+                    "--debug" => config.debug = true,
                     "--norun" => config.norun = true,
                     _ => {},
                 }
