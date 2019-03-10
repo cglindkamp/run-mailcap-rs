@@ -3,6 +3,8 @@ use std::fs::File;
 use std::io::{self, BufReader};
 use std::io::prelude::*;
 
+use super::config::*;
+
 #[derive(Debug)]
 pub struct MailcapEntry {
     pub view: String,
@@ -108,6 +110,25 @@ pub fn get_entries(mailcap_paths: &[&Path], mime_type: &str) -> Result<Vec<Mailc
     Ok(entries)
 }
 
+pub fn get_final_command<'a, I>(config: &Config, mailcap_entries: I) -> Option<String>
+where
+    I: IntoIterator<Item = &'a MailcapEntry>,
+{
+    for entry in mailcap_entries {
+        let command = match config.action {
+            Action::View => &entry.view,
+            Action::Cat => &entry.view,
+            Action::Edit => &entry.edit,
+            Action::Compose => &entry.compose,
+            Action::Print => &entry.print,
+        };
+        if command != "" {
+            return Some(command.replace("%s", &config.filename));
+        }
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
@@ -177,5 +198,46 @@ mod tests {
         let mime_paths: [&Path; 1] = [&path.as_path()];
         let results = get_entries(&mime_paths, "#text/plain").unwrap();
         assert_eq!(results.len(), 0);
+    }
+
+    #[test]
+    fn test_final_command() {
+        let entries: [MailcapEntry; 2] = [
+            MailcapEntry{
+                view: String::from("cat '%s'"),
+                edit: String::new(),
+                compose: String::new(),
+                print: String::new(),
+                test: String::new(),
+                copiousoutput: false,
+                needsterminal: false,
+            },
+            MailcapEntry{
+                view: String::new(),
+                edit: String::from("vim '%s'"),
+                compose: String::new(),
+                print: String::new(),
+                test: String::new(),
+                copiousoutput: false,
+                needsterminal: false,
+            },
+        ];
+        let filename = String::from("test.txt");
+        let action = Action::View;
+        let config = Config { filename , action };
+
+        assert_eq!(get_final_command(&config, &entries).unwrap(), "cat 'test.txt'");
+
+        let filename = String::from("test.txt");
+        let action = Action::Edit;
+        let config = Config { filename , action };
+
+        assert_eq!(get_final_command(&config, &entries).unwrap(), "vim 'test.txt'");
+
+        let filename = String::from("test.txt");
+        let action = Action::Compose;
+        let config = Config { filename , action };
+
+        assert_eq!(get_final_command(&config, &entries), None);
     }
 }

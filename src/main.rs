@@ -7,30 +7,10 @@ mod config;
 mod mailcap;
 mod mimetype;
 
-use config::Action;
-
-fn run_mailcap(config: &config::Config, mailcap_entries: &[mailcap::MailcapEntry]) {
-    for entry in mailcap_entries {
-        let command = match config.action {
-            Action::View => &entry.view,
-            Action::Cat => &entry.view,
-            Action::Edit => &entry.edit,
-            Action::Compose => &entry.compose,
-            Action::Print => &entry.print,
-        };
-        if command != "" {
-            let command = command.replace("%s", &config.filename);
-            let _status = Command::new("sh")
-                .arg("-c")
-                .arg(command)
-                .status();
-            return;
-        }
-    }
-}
+use config::Config;
 
 fn main() {
-    let config = config::Config::parse(env::args()).unwrap();
+    let config = Config::parse(env::args()).unwrap();
     let mut home = PathBuf::from(env::var("HOME").unwrap());
     home.push(".mime.types");
 
@@ -67,6 +47,11 @@ fn main() {
         println!("copiousoutput: {}", entry.copiousoutput);
     }
 
-    run_mailcap(&config, &mailcap_entries);
+    if let Some(command) = mailcap::get_final_command(&config, &mailcap_entries) {
+        let _status = Command::new("sh")
+            .arg("-c")
+            .arg(command)
+            .status();
+    }
 }
 
