@@ -39,6 +39,7 @@ pub struct Config {
     pub pager: String,
     pub running_in_x: bool,
     pub debug: bool,
+    pub nopager: bool,
     pub norun: bool,
 }
 
@@ -51,6 +52,7 @@ impl Default for Config {
             pager: String::from("less"),
             running_in_x: false,
             debug: false,
+            nopager: false,
             norun: false,
         }
     }
@@ -87,6 +89,7 @@ impl Config {
                 match key {
                     "--action" => config.action = Action::from(value),
                     "--debug" => config.debug = true,
+                    "--nopager" => config.nopager = true,
                     "--norun" => config.norun = true,
                     _ => {},
                 }

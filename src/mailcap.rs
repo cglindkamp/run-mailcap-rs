@@ -134,7 +134,7 @@ where
         if command != "" {
             let mut command = command.replace("%s", &config.filename);
 
-            if entry.copiousoutput && config.action != Action::Print {
+            if entry.copiousoutput && !config.nopager && config.action != Action::Print {
                 command = command + "|" + &config.pager;
             }
 
@@ -319,6 +319,13 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(get_final_command(&config, true, &entries).unwrap(), "cat 'test.txt'|less");
+
+        let config = Config {
+            filename: String::from("test.txt"),
+            nopager: true,
+            ..Default::default()
+        };
+        assert_eq!(get_final_command(&config, true, &entries).unwrap(), "cat 'test.txt'");
 
         let config = Config {
             filename: String::from("test.txt"),
