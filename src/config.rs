@@ -39,6 +39,17 @@ pub struct Config {
     pub running_in_x: bool,
 }
 
+impl Default for Config {
+   fn default() -> Self {
+       Config {
+           filename: String::new(),
+           action: Action::View,
+           xtermcmd: String::from("xterm"),
+           running_in_x: false,
+       }
+   }
+}
+
 impl Config {
     pub fn parse<IA, IE>(args: IA, envvars: IE) -> Result<Config, &'static str>
     where
@@ -48,15 +59,15 @@ impl Config {
         let mut args = args.into_iter();
         let programname = args.next().unwrap();
         let programname = programname.rsplit('/').next().unwrap();
-        let mut action = Action::from_program_name(programname);
-        let mut filename = String::new();
-        let mut xtermcmd = String::from("xterm");
-        let mut running_in_x = false;
+        let mut config: Config = Config {
+            action: Action::from_program_name(programname),
+            ..Default::default()
+        };
 
         for (key, value) in envvars {
             match key.as_ref() {
-                "XTERMCMD" => xtermcmd = value,
-                "DISPLAY" => running_in_x = true,
+                "XTERMCMD" => config.xtermcmd = value,
+                "DISPLAY" => config.running_in_x = true,
                 _ => {},
             }
         };
@@ -67,18 +78,18 @@ impl Config {
                 let value = argument_parts.next().unwrap_or("");
 
                 match key {
-                    "--action" => action = Action::from(value),
+                    "--action" => config.action = Action::from(value),
                     _ => {},
                 }
             } else {
-                filename = argument
+                config.filename = argument
             }
         }
 
-        if filename == "" {
+        if config.filename == "" {
             Err("No filename was given in arguments")
         } else {
-            Ok(Config { filename, action, xtermcmd, running_in_x })
+            Ok(config)
         }
     }
 }
