@@ -36,22 +36,24 @@ pub struct Config {
     pub filename: String,
     pub action: Action,
     pub xtermcmd: String,
+    pub pager: String,
     pub running_in_x: bool,
     pub debug: bool,
     pub norun: bool,
 }
 
 impl Default for Config {
-   fn default() -> Self {
-       Config {
-           filename: String::new(),
-           action: Action::View,
-           xtermcmd: String::from("xterm"),
-           running_in_x: false,
-           debug: false,
-           norun: false,
-       }
-   }
+    fn default() -> Self {
+        Config {
+            filename: String::new(),
+            action: Action::View,
+            xtermcmd: String::from("xterm"),
+            pager: String::from("less"),
+            running_in_x: false,
+            debug: false,
+            norun: false,
+        }
+    }
 }
 
 impl Config {
@@ -70,6 +72,7 @@ impl Config {
 
         for (key, value) in envvars {
             match key.as_ref() {
+                "PAGER" => config.pager = value,
                 "XTERMCMD" => config.xtermcmd = value,
                 "DISPLAY" => config.running_in_x = true,
                 _ => {},
@@ -132,6 +135,7 @@ mod tests {
         assert_eq!(config.filename, "test.txt");
         assert_eq!(config.action, Action::View);
         assert_eq!(config.xtermcmd, "xterm");
+        assert_eq!(config.pager, "less");
         assert_eq!(config.running_in_x, false);
     }
 
@@ -215,6 +219,20 @@ mod tests {
         let config = Config::parse(args, env).unwrap();
 
         assert_eq!(config.running_in_x, true);
+    }
+
+    #[test]
+    fn test_config_pager_from_env() {
+        let args = vec![
+            String::from("run-mailcap-rs"),
+            String::from("test.txt"),
+        ];
+        let env = vec![
+            (String::from("PAGER"), String::from("more")),
+        ];
+        let config = Config::parse(args, env).unwrap();
+
+        assert_eq!(config.pager, "more");
     }
 }
 
