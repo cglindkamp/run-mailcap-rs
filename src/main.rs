@@ -11,8 +11,36 @@ mod mimetype;
 
 use config::Config;
 
+fn print_usage() {
+    println!("Usage: run-mailcap-rs [OPTION]... FILE");
+    println!();
+    println!("Options:");
+    println!("    --action=<action>");
+    println!("        Specify the action performed on the file. Valid actions are:");
+    println!("        view, see (same as view), cat (same as view atm), edit,");
+    println!("        change (same es edit), compose, create (same as compose)");
+    println!("        and print.");
+    println!("    --debug");
+    println!("        Print some debugging statements. Its more of a tool during");
+    println!("        development but may also help to determine whats wrong, when");
+    println!("        unexpected actions are performend.");
+    println!("    --nopager");
+    println!("        Ignore \"copiousoutput\" in mailcap files and call the corresponding");
+    println!("        command without invoking a pager");
+    println!("    --norun");
+    println!("        Do not execute the found command, but just print it. The \"test\"");
+    println!("        commands in the mailcap entries are still executed.");
+}
+
 fn main() {
-    let config = Config::parse(env::args(), env::vars()).unwrap();
+    let config = Config::parse(env::args(), env::vars());
+
+    if let Err(_err) = config {
+        print_usage();
+        return;
+    }
+    let config = config.unwrap();
+
     let mut home = PathBuf::from(env::var("HOME").unwrap());
     home.push(".mime.types");
 
