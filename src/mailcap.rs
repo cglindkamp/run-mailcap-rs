@@ -2,6 +2,7 @@ use std::path::Path;
 use std::fs::File;
 use std::io::{self, BufReader};
 use std::io::prelude::*;
+use std::process::Command;
 
 use super::config::*;
 
@@ -133,6 +134,20 @@ where
         };
         if command != "" {
             let mut command = command.replace("%s", &config.filename);
+
+            if entry.test != "" {
+                let testcommand = entry.test.replace("%s", &config.filename) + " 2>&1 > /dev/null";
+                if let Ok(status) = Command::new("sh")
+                    .arg("-c")
+                    .arg(testcommand)
+                    .status() {
+                    if !status.success() {
+                            continue;
+                    }
+                } else {
+                    continue;
+                }
+            }
 
             if entry.copiousoutput && !config.nopager && config.action != Action::Print {
                 command = command + "|" + &config.pager;
@@ -340,5 +355,27 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(get_final_command(&config, false, &entries).unwrap(), "lpr 'test.txt'");
+    }
+
+    #[test]
+    fn test_final_command_test_command() {
+        let entries: [MailcapEntry; 2] = [
+            MailcapEntry{
+                view: String::from("cat '%s'"),
+                test: String::from("echo '%s'|grep foo"),
+                ..Default::default()
+            },
+            MailcapEntry{
+                view: String::from("less '%s'"),
+                test: String::from("echo '%s'|grep bar"),
+                ..Default::default()
+            },
+        ];
+
+        let config = Config {
+            filename: String::from("bar.txt"),
+            ..Default::default()
+        };
+        assert_eq!(get_final_command(&config, true, &entries).unwrap(), "less 'bar.txt'");
     }
 }
