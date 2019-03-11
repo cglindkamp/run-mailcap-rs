@@ -12,21 +12,14 @@ impl Action {
     fn from(actionstr: &str) -> Action {
         match actionstr {
             "view" => Action::View,
+            "see" => Action::View,
             "cat" => Action::Cat,
             "edit" => Action::Edit,
+            "change" => Action::Edit,
             "compose" => Action::Compose,
+            "create" => Action::Compose,
             "print" => Action::Print,
             _ => Action::View,
-        }
-    }
-
-    fn from_program_name(programname: &str) -> Action {
-        let programname = programname.trim_end_matches("-rs");
-        match programname {
-            "see" => Action::View,
-            "change" => Action::Edit,
-            "create" => Action::Compose,
-            _ => Action::from(programname),
         }
     }
 }
@@ -68,7 +61,7 @@ impl Config {
         let programname = args.next().unwrap();
         let programname = programname.rsplit('/').next().unwrap();
         let mut config: Config = Config {
-            action: Action::from_program_name(programname),
+            action: Action::from(programname),
             ..Default::default()
         };
 
