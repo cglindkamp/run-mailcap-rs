@@ -32,8 +32,8 @@ Status
 ------
 - all command line arguments of the original run-mailcap are implemented
 - the following actions are implemented: view, see (same as view), cat (same as
-  view atm), edit, change (same es edit), compose, create (same as compose) and
-  print
+  view, but only handle entries with copiousoutput and don't use a pager),
+  edit, change (same es edit), compose, create (same as compose) and print
 - actions can also be determined by the name, the program was called; in addtion
   to the names recognized by run-mailcap, all names are also recognized with and
   "-rs" suffix, so run-mailcap and run-mailcap-rs can live side by side.

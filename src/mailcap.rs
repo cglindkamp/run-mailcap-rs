@@ -133,6 +133,10 @@ where
             Action::Print => &entry.print,
         };
         if command != "" {
+            if config.action == Action::Cat && !entry.copiousoutput {
+                continue;
+            }
+
             let mut command = command.replace("%s", &config.filename);
 
             if entry.test != "" {
@@ -362,6 +366,28 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(get_final_command(&config, false, &entries).unwrap(), "lpr 'test.txt'");
+    }
+
+    #[test]
+    fn test_final_command_action_cat() {
+        let entries: [MailcapEntry; 2] = [
+            MailcapEntry{
+                view: String::from("less '%s'"),
+                ..Default::default()
+            },
+            MailcapEntry{
+                view: String::from("cat '%s'"),
+                copiousoutput: true,
+                ..Default::default()
+            },
+        ];
+
+        let config = Config {
+            filename: String::from("bar.txt"),
+            action: Action::Cat,
+            ..Default::default()
+        };
+        assert_eq!(get_final_command(&config, true, &entries).unwrap(), "cat 'bar.txt'");
     }
 
     #[test]
