@@ -149,7 +149,7 @@ where
                 }
             }
 
-            if entry.copiousoutput && !config.nopager && config.action != Action::Print {
+            if entry.copiousoutput && !config.nopager && config.action == Action::View {
                 command = command + "|" + &config.pager;
             }
 
@@ -320,7 +320,7 @@ mod tests {
         let entries: [MailcapEntry; 1] = [
             MailcapEntry{
                 view: String::from("cat '%s'"),
-                edit: String::new(),
+                edit: String::from("vim '%s'"),
                 compose: String::new(),
                 print: String::from("lpr '%s'"),
                 test: String::new(),
@@ -334,6 +334,13 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(get_final_command(&config, true, &entries).unwrap(), "cat 'test.txt'|less");
+
+        let config = Config {
+            filename: String::from("test.txt"),
+            action: Action::Edit,
+            ..Default::default()
+        };
+        assert_eq!(get_final_command(&config, true, &entries).unwrap(), "vim 'test.txt'");
 
         let config = Config {
             filename: String::from("test.txt"),
