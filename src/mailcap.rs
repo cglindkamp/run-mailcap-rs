@@ -142,6 +142,7 @@ fn command_replace_filename(string: &str, filename: &str) -> String {
                     newstring.push_str(filename);
                     state = ReplaceState::Character;
                 }
+                '%' => newstring.push('%'),
                 _ => {
                     newstring.push('%');
                     newstring.push(c);
@@ -153,6 +154,7 @@ fn command_replace_filename(string: &str, filename: &str) -> String {
                     newstring.push('%');
                     state = ReplaceState::Character;
                 }
+                '\\' => newstring.push('\\'),
                 _ => {
                     newstring.push('\\');
                     newstring.push(c);
@@ -460,7 +462,7 @@ mod tests {
     fn test_final_command_escape_percent() {
         let entries: [MailcapEntry; 1] = [
             MailcapEntry{
-                view: String::from("cat '\\%s'"),
+                view: String::from("cat '\\\\%s' %%s"),
                 ..Default::default()
             },
         ];
@@ -469,6 +471,6 @@ mod tests {
             filename: String::from("test.txt"),
             ..Default::default()
         };
-        assert_eq!(get_final_command(&config, true, &entries).unwrap(), "cat '%s'");
+        assert_eq!(get_final_command(&config, true, &entries).unwrap(), "cat '\\%s' %test.txt");
     }
 }
