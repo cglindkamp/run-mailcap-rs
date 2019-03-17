@@ -120,6 +120,50 @@ pub fn get_entries(mailcap_paths: &[&Path], mime_type: &str) -> Result<Vec<Mailc
     Ok(entries)
 }
 
+fn command_replace_filename(string: &str, filename: &str) -> String {
+    enum ReplaceState {
+        Character,
+        PerCent,
+        Escape,
+    }
+
+    let mut state = ReplaceState::Character;
+    let mut newstring = String::new();
+
+    for c in string.chars() {
+        match state {
+            ReplaceState::Character => match c {
+                '%' => state = ReplaceState::PerCent,
+                '\\' => state = ReplaceState::Escape,
+                _ => newstring.push(c),
+            }
+            ReplaceState::PerCent => match c {
+                's' => {
+                    newstring.push_str(filename);
+                    state = ReplaceState::Character;
+                }
+                _ => {
+                    newstring.push('%');
+                    newstring.push(c);
+                    state = ReplaceState::Character;
+                }
+            }
+            ReplaceState::Escape => match c {
+                '%' => {
+                    newstring.push('%');
+                    state = ReplaceState::Character;
+                }
+                _ => {
+                    newstring.push('\\');
+                    newstring.push(c);
+                    state = ReplaceState::Character;
+                }
+            }
+        }
+    }
+    newstring
+}
+
 pub fn get_final_command<'a, I>(config: &Config, isatty: bool, mailcap_entries: I) -> Option<String>
 where
     I: IntoIterator<Item = &'a MailcapEntry>,
@@ -137,10 +181,10 @@ where
                 continue;
             }
 
-            let mut command = command.replace("%s", &config.filename);
+            let mut command = command_replace_filename(command, &config.filename);
 
             if entry.test != "" {
-                let testcommand = entry.test.replace("%s", &config.filename) + " 2>&1 > /dev/null";
+                let testcommand = command_replace_filename(&entry.test, &config.filename) + " 2>&1 > /dev/null";
                 if let Ok(status) = Command::new("sh")
                     .arg("-c")
                     .arg(testcommand)
@@ -410,5 +454,21 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(get_final_command(&config, true, &entries).unwrap(), "less 'bar.txt'");
+    }
+
+    #[test]
+    fn test_final_command_escape_percent() {
+        let entries: [MailcapEntry; 1] = [
+            MailcapEntry{
+                view: String::from("cat '\\%s'"),
+                ..Default::default()
+            },
+        ];
+
+        let config = Config {
+            filename: String::from("test.txt"),
+            ..Default::default()
+        };
+        assert_eq!(get_final_command(&config, true, &entries).unwrap(), "cat '%s'");
     }
 }
