@@ -17,7 +17,8 @@ fn print_usage() {
     println!("Options:");
     println!("    --action=<action>");
     println!("        Specify the action performed on the file. Valid actions are:");
-    println!("        view, see (same as view), cat (same as view atm), edit,");
+    println!("        view, see (same as view), cat (same as view, but only handle");
+    println!("        entries with copiousoutput and don't use a pager), edit,");
     println!("        change (same es edit), compose, create (same as compose)");
     println!("        and print.");
     println!("    --debug");
