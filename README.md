@@ -39,8 +39,8 @@ Status
   "-rs" suffix, so run-mailcap and run-mailcap-rs can live side by side.
 - replacement of the filename (%s) in commands is supported; escaping % and
   other replacements is not
-- only a single file can be given to run-mailcap-rs, without mime type or
-  encoding specified
+- only a single file with optional mime type can be given to run-mailcap-rs,
+  without encoding specified
 
 Installation
 ------------

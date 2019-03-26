@@ -12,7 +12,7 @@ mod mimetype;
 use config::Config;
 
 fn print_usage() {
-    println!("Usage: run-mailcap-rs [OPTION]... FILE");
+    println!("Usage: run-mailcap-rs [OPTION]... [MIME-TYPE:]FILE");
     println!();
     println!("Options:");
     println!("    --action=<action>");
@@ -40,23 +40,25 @@ fn main() {
         print_usage();
         return;
     }
-    let config = config.unwrap();
+    let mut config = config.unwrap();
 
-    let mut home = PathBuf::from(env::var("HOME").unwrap());
-    home.push(".mime.types");
+    if config.mimetype == "" {
+        let mut home = PathBuf::from(env::var("HOME").unwrap());
+        home.push(".mime.types");
 
-    let mime_paths: [&Path; 4] = [
-        &home.as_path(),
-        Path::new("/usr/share/etc/mime.types"),
-        Path::new("/usr/local/etc/mime.types"),
-        Path::new("/etc/mime.types"),
-    ];
-    let mime_type = mimetype::get_type(&mime_paths, &config.filename).unwrap();
+        let mime_paths: [&Path; 4] = [
+            &home.as_path(),
+            Path::new("/usr/share/etc/mime.types"),
+            Path::new("/usr/local/etc/mime.types"),
+            Path::new("/etc/mime.types"),
+        ];
+        config.mimetype = mimetype::get_type(&mime_paths, &config.filename).unwrap();
 
-    if config.debug {
-        println!("Determined mime type:");
-        println!("{}", mime_type);
-        println!();
+        if config.debug {
+            println!("Determined mime type:");
+            println!("{}", config.mimetype);
+            println!();
+        }
     }
 
     let mut home = PathBuf::from(env::var("HOME").unwrap());
@@ -69,7 +71,7 @@ fn main() {
         Path::new("/usr/local/etc/mailcap"),
         Path::new("/usr/etc/mailcap"),
     ];
-    let mailcap_entries = mailcap::get_entries(&mailcap_paths, &mime_type).unwrap();
+    let mailcap_entries = mailcap::get_entries(&mailcap_paths, &config.mimetype).unwrap();
 
     if config.debug {
         println!("Mailcap entries:");
