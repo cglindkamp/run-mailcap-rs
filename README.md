@@ -37,8 +37,8 @@ Status
 - actions can also be determined by the name, the program was called; in addtion
   to the names recognized by run-mailcap, all names are also recognized with and
   "-rs" suffix, so run-mailcap and run-mailcap-rs can live side by side.
-- replacement of the filename (%s) in commands is supported; escaping % and
-  other replacements is not
+- replacement of the filename (%s) and mimetype (%t) in commands is supported;
+  other replacements are not
 - only a single file with optional mime type can be given to run-mailcap-rs,
   without encoding specified
 

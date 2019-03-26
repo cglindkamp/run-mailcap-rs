@@ -120,7 +120,7 @@ pub fn get_entries(mailcap_paths: &[&Path], mime_type: &str) -> Result<Vec<Mailc
     Ok(entries)
 }
 
-fn command_replace_filename(string: &str, filename: &str) -> String {
+fn command_replace_placeholder(string: &str, config: &Config) -> String {
     enum ReplaceState {
         Character,
         PerCent,
@@ -139,7 +139,11 @@ fn command_replace_filename(string: &str, filename: &str) -> String {
             }
             ReplaceState::PerCent => match c {
                 's' => {
-                    newstring.push_str(filename);
+                    newstring.push_str(&config.filename);
+                    state = ReplaceState::Character;
+                }
+                't' => {
+                    newstring.push_str(&config.mimetype);
                     state = ReplaceState::Character;
                 }
                 '%' => newstring.push('%'),
@@ -183,10 +187,10 @@ where
                 continue;
             }
 
-            let mut command = command_replace_filename(command, &config.filename);
+            let mut command = command_replace_placeholder(command, &config);
 
             if entry.test != "" {
-                let testcommand = command_replace_filename(&entry.test, &config.filename) + " 2>&1 > /dev/null";
+                let testcommand = command_replace_placeholder(&entry.test, &config) + " 2>&1 > /dev/null";
                 if let Ok(status) = Command::new("sh")
                     .arg("-c")
                     .arg(testcommand)
@@ -472,5 +476,22 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(get_final_command(&config, true, &entries).unwrap(), "cat '\\%s' %test.txt");
+    }
+
+    #[test]
+    fn test_final_command_insert_mimetype() {
+        let entries: [MailcapEntry; 1] = [
+            MailcapEntry{
+                view: String::from("echo %t %s"),
+                ..Default::default()
+            },
+        ];
+
+        let config = Config {
+            filename: String::from("test.txt"),
+            mimetype: String::from("application/pdf"),
+            ..Default::default()
+        };
+        assert_eq!(get_final_command(&config, true, &entries).unwrap(), "echo application/pdf test.txt");
     }
 }
