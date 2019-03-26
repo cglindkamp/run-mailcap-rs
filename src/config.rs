@@ -27,6 +27,7 @@ impl Action {
 #[derive(Debug)]
 pub struct Config {
     pub filename: String,
+    pub mimetype: String,
     pub action: Action,
     pub xtermcmd: String,
     pub pager: String,
@@ -40,6 +41,7 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             filename: String::new(),
+            mimetype: String::new(),
             action: Action::View,
             xtermcmd: String::from("xterm"),
             pager: String::from("less"),
@@ -87,7 +89,17 @@ impl Config {
                     _ => {},
                 }
             } else {
-                config.filename = argument
+                let mut argument_parts = argument.splitn(2, ':');
+                let first = argument_parts.next();
+                let second = argument_parts.next();
+
+                match second {
+                    Some(filename) => {
+                        config.filename = filename.to_string();
+                        config.mimetype = first.unwrap().to_string();
+                    }
+                    None => config.filename = first.unwrap().to_string(),
+                }
             }
         }
 
@@ -229,6 +241,19 @@ mod tests {
         let config = Config::parse(args, env).unwrap();
 
         assert_eq!(config.pager, "more");
+    }
+
+    #[test]
+    fn test_config_mimetype_from_args() {
+        let args = vec![
+            String::from("run-mailcap-rs"),
+            String::from("text/plain:test.xml"),
+        ];
+        let env = Vec::new();
+
+        let config = Config::parse(args, env).unwrap();
+
+        assert_eq!(config.mimetype, "text/plain");
     }
 }
 
