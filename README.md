@@ -1,4 +1,4 @@
-run-mailcap-rs [![Build Status](https://travis-ci.org/cglindkamp/run-mailcap-rs.svg?branch=master)](https://travis-ci.org/cglindkamp/run-mailcap-rs)
+run-mailcap-rs [![Build Status](https://api.travis-ci.com/cglindkamp/run-mailcap-rs.svg?branch=master)](https://travis-ci.com/cglindkamp/run-mailcap-rs)
 ==============
 This is rewrite of run-mailcap in Rust.
 
