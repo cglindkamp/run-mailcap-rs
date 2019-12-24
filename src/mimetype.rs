@@ -32,7 +32,7 @@ pub fn get_type(mime_paths: &[&Path], filename: &str) -> Result<String, io::Erro
                     continue;
                 }
                 for item in items {
-                    if extension == item {
+                    if extension.to_lowercase() == item {
                         return Ok(String::from(mime));
                     }
                 }
@@ -60,6 +60,7 @@ mod tests {
         let mime_paths: [&Path; 1] = [&path.as_path()];
 
         assert_eq!(get_type(&mime_paths, "test.mp4").unwrap(), "video/mp4");
+        assert_eq!(get_type(&mime_paths, "test.MP4").unwrap(), "video/mp4");
         assert_eq!(get_type(&mime_paths, "test.txt").unwrap(), "text/plain");
         assert_eq!(get_type(&mime_paths, "test").unwrap(), "application/octet-stream");
         assert_eq!(get_type(&mime_paths, "test.html").unwrap(), "application/octet-stream");
