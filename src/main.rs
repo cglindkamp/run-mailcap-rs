@@ -1,4 +1,5 @@
 extern crate atty;
+extern crate regex;
 
 use std::path::Path;
 use std::path::PathBuf;

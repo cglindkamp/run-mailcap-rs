@@ -1,3 +1,5 @@
+use regex::Regex;
+
 #[derive(Debug)]
 #[derive(PartialEq)]
 pub enum Action {
@@ -89,16 +91,13 @@ impl Config {
                     _ => {},
                 }
             } else {
-                let mut argument_parts = argument.splitn(2, ':');
-                let first = argument_parts.next();
-                let second = argument_parts.next();
-
-                match second {
-                    Some(filename) => {
-                        config.filename = filename.to_string();
-                        config.mimetype = first.unwrap().to_string();
-                    }
-                    None => config.filename = first.unwrap().to_string(),
+                let re = Regex::new(r"^(?P<mimetype>[^/:]+/[^/:]+):(?P<filename>.*)").unwrap();
+                if let Some(m) = re.captures(&argument) {
+                    config.filename = m["filename"].to_string();
+                    config.mimetype = m["mimetype"].to_string();
+                }
+                if config.filename == "" {
+                    config.filename = argument;
                 }
             }
         }
@@ -254,6 +253,19 @@ mod tests {
         let config = Config::parse(args, env).unwrap();
 
         assert_eq!(config.mimetype, "text/plain");
+    }
+
+    #[test]
+    fn test_config_colon_in_filename() {
+        let args = vec![
+            String::from("run-mailcap-rs"),
+            String::from("test:foo.txt"),
+        ];
+        let env = Vec::new();
+
+        let config = Config::parse(args, env).unwrap();
+
+        assert_eq!(config.filename, "test:foo.txt");
     }
 }
 
