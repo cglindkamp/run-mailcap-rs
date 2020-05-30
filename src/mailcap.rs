@@ -128,6 +128,7 @@ fn command_replace_placeholder(string: &str, config: &Config) -> String {
     }
 
     let mut state = ReplaceState::Character;
+    let mut single_quote_flag = false;
     let mut newstring = String::new();
 
     for c in string.chars() {
@@ -135,11 +136,25 @@ fn command_replace_placeholder(string: &str, config: &Config) -> String {
             ReplaceState::Character => match c {
                 '%' => state = ReplaceState::PerCent,
                 '\\' => state = ReplaceState::Escape,
+                '\'' => {
+                    single_quote_flag = !single_quote_flag;
+                    newstring.push(c)
+                },
                 _ => newstring.push(c),
             }
             ReplaceState::PerCent => match c {
                 's' => {
-                    newstring.push_str(&config.filename);
+                    for fc in config.filename.chars() {
+                        if fc == '\'' {
+                            if single_quote_flag {
+                                newstring.push_str("'\\''");
+                            } else {
+                                newstring.push_str("\\'");
+                            }
+                        } else {
+                            newstring.push(fc);
+                        }
+                    }
                     state = ReplaceState::Character;
                 }
                 't' => {
@@ -494,4 +509,37 @@ mod tests {
         };
         assert_eq!(get_final_command(&config, true, &entries).unwrap(), "echo application/pdf test.txt");
     }
+
+    #[test]
+    fn test_final_command_single_quote_1() {
+        let entries: [MailcapEntry; 1] = [
+            MailcapEntry{
+                view: String::from("cat '%s'"),
+                ..Default::default()
+            },
+        ];
+
+        let config = Config {
+            filename: String::from("fo'o.txt"),
+            ..Default::default()
+        };
+        assert_eq!(get_final_command(&config, true, &entries).unwrap(), "cat 'fo'\\''o.txt'");
+    }
+
+    #[test]
+    fn test_final_command_single_quote_2() {
+        let entries: [MailcapEntry; 1] = [
+            MailcapEntry{
+                view: String::from("cat %s"),
+                ..Default::default()
+            },
+        ];
+
+        let config = Config {
+            filename: String::from("fo'o.txt"),
+            ..Default::default()
+        };
+        assert_eq!(get_final_command(&config, true, &entries).unwrap(), "cat fo\\'o.txt");
+    }
+
 }
