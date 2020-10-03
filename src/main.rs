@@ -44,16 +44,7 @@ fn main() {
     let mut config = config.unwrap();
 
     if config.mimetype == "" {
-        let mut home = PathBuf::from(env::var("HOME").unwrap());
-        home.push(".mime.types");
-
-        let mime_paths: [&Path; 4] = [
-            &home.as_path(),
-            Path::new("/usr/share/etc/mime.types"),
-            Path::new("/usr/local/etc/mime.types"),
-            Path::new("/etc/mime.types"),
-        ];
-        config.mimetype = mimetype::get_type(&mime_paths, &config.filename).unwrap();
+        config.mimetype = mimetype::get_type(&config.filename).unwrap();
 
         if config.debug {
             println!("Determined mime type:");
