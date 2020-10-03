@@ -4,9 +4,9 @@ This is rewrite of run-mailcap in Rust.
 
 Why a rewrite?
 --------------
-Run-mailcap seems to be unmaintained at least on Gentoo, so you either have an
-old non-working install or non at all there. Apart from that, I wanted to learn
-Rust, and run-mailcap is simple enough to get it done without in depth knowledge
+~~Run-mailcap seems to be unmaintained at least on Gentoo, so you either have an
+old non-working install or non at all there.~~ Apart from that, I wanted to learn
+Rust, and run-mailcap is simple enough to get it done without in-depth knowledge
 of the language, but also not trivial either.
 
 Why not using xdg-open?
@@ -35,7 +35,7 @@ Status
   view, but only handle entries with copiousoutput and don't use a pager),
   edit, change (same es edit), compose, create (same as compose) and print
 - actions can also be determined by the name, the program was called; in addtion
-  to the names recognized by run-mailcap, all names are also recognized with and
+  to the names recognized by run-mailcap, all names are also recognized with an
   "-rs" suffix, so run-mailcap and run-mailcap-rs can live side by side.
 - replacement of the filename (%s) and mimetype (%t) in commands is supported;
   other replacements are not
