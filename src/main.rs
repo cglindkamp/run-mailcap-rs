@@ -44,11 +44,40 @@ fn main() {
     let mut config = config.unwrap();
 
     if config.mimetype == "" {
-        config.mimetype = mimetype::get_type(&config.filename).unwrap();
+        let mut home = PathBuf::from(env::var("HOME").unwrap());
+        home.push(".mime.types");
+
+        let mime_paths: [&Path; 4] = [
+            &home.as_path(),
+            Path::new("/usr/share/etc/mime.types"),
+            Path::new("/usr/local/etc/mime.types"),
+            Path::new("/etc/mime.types"),
+        ];
+
+        config.mimetype = match mimetype::get_type_by_extension(&mime_paths, &config.filename) {
+            Ok(mimetype) => {
+                config.mimetype_source = String::from("mime.types file");
+                mimetype
+            },
+            Err(_e) => String::from(""),
+        };
+
+        if config.mimetype.len() == 0 || config.mimetype == "application/octet-stream" {
+            config.mimetype = match mimetype::get_type_by_magic(&config.filename) {
+                Ok(mimetype) => {
+                    config.mimetype_source = String::from("libmagic");
+                    mimetype
+                },
+                Err(_e) => {
+                    config.mimetype_source = String::from("none");
+                    String::from("application/octet-stream")
+                },
+            };
+        }
 
         if config.debug {
-            println!("Determined mime type:");
-            println!("{}", config.mimetype);
+            println!("Determined mime type: {}", config.mimetype);
+            println!("Detected by: {}", config.mimetype_source);
             println!();
         }
     }

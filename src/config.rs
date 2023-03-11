@@ -30,6 +30,7 @@ impl Action {
 pub struct Config {
     pub filename: String,
     pub mimetype: String,
+    pub mimetype_source: String,
     pub action: Action,
     pub xtermcmd: String,
     pub pager: String,
@@ -44,6 +45,7 @@ impl Default for Config {
         Config {
             filename: String::new(),
             mimetype: String::new(),
+            mimetype_source: String::new(),
             action: Action::View,
             xtermcmd: String::from("xterm"),
             pager: String::from("less"),
