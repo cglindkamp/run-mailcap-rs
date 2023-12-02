@@ -34,12 +34,12 @@ fn print_usage() {
     println!("        commands in the mailcap entries are still executed.");
 }
 
-fn main() {
+fn main() -> std::process::ExitCode {
     let config = Config::parse(env::args(), env::vars());
 
     if let Err(_err) = config {
         print_usage();
-        return;
+        return std::process::ExitCode::from(2);
     }
     let mut config = config.unwrap();
 
@@ -111,12 +111,23 @@ fn main() {
     if let Some(command) = mailcap::get_final_command(&config, atty::is(atty::Stream::Stdout), &mailcap_entries) {
         if config.norun {
             println!("{}", command);
+            return std::process::ExitCode::from(0)
         } else {
-            let _status = Command::new("sh")
+            let status = Command::new("sh")
                 .arg("-c")
                 .arg(command)
                 .status();
+            return match status {
+                Ok(status) => {
+                    match status.code() {
+                        Some(code) => std::process::ExitCode::from(code as u8),
+                        None       => std::process::ExitCode::from(1),
+                    }
+                },
+                Err(_e) => std::process::ExitCode::from(1),
+            }
         }
     }
+    std::process::ExitCode::from(0)
 }
 
